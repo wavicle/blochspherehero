@@ -65,3 +65,46 @@ export function createAxesHelper() {
 
     return axesGroup;
 }
+
+export function createBlochSphereGrid() {
+    const group = new THREE.Group();
+
+    const sphereGeometry = new THREE.SphereGeometry(1.5, 16, 16);
+    sphereGeometry.rotateX(Math.PI / 2);
+    const sphereWireframeGeometry = new THREE.WireframeGeometry(sphereGeometry);
+    const material = new THREE.LineBasicMaterial({
+        color: 0x00ffff,
+        transparent: true,
+        opacity: 0.1
+    });
+    const edges = new THREE.LineSegments(
+        new THREE.EdgesGeometry(sphereWireframeGeometry),
+        material
+    );
+    group.add(edges);
+
+    const circleGeometry = new THREE.CircleGeometry(1.5);
+    const circleMesh = new THREE.Mesh(circleGeometry, material);
+
+    group.add(circleMesh);
+
+    return group;
+}
+
+export interface ArrowParams {
+    origin: THREE.Vector3,
+    direction: THREE.Vector3,
+    length: number,
+    color: number;
+}
+
+export function createArrow({ origin, direction, length, color }: ArrowParams) {
+    return new THREE.ArrowHelper(
+        direction.normalize(),
+        origin,
+        length,
+        color,
+        0.2,
+        0.2
+    );
+}

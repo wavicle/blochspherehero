@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import SingleQubitScene from './components/SingleQubitScene.vue'
+import SingleQubitWorkshop from './components/SingleQubitWorkshop.vue'
 </script>
 
 <template>
-  <SingleQubitScene />
+  <SingleQubitWorkshop />
 </template>

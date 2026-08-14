@@ -4,7 +4,13 @@ import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
 THREE.Object3D.DEFAULT_UP.set(0, 0, 1);
 
 export interface Scene3dParams {
-    canvasElement: HTMLCanvasElement
+    canvasElement: HTMLCanvasElement;
+    timeMultiplier: number;
+}
+
+export interface TimeInfo {
+    delta: number;
+    elapsed: number;
 }
 
 export class Scene3d {
@@ -14,6 +20,9 @@ export class Scene3d {
     private _camera: THREE.PerspectiveCamera;
     private _orbitControls: OrbitControls;
     private _animationFrameId: number | null = null;
+
+    private timer = new THREE.Timer();
+    private timeMultiplier: number;
 
     constructor(params: Scene3dParams) {
         this.canvasElement = params.canvasElement;
@@ -42,6 +51,8 @@ export class Scene3d {
         this._orbitControls.target.set(0, 0, 0);
         this._orbitControls.update();
 
+        this.timeMultiplier = params.timeMultiplier;
+
         window.addEventListener('resize', this.onResize);
     }
 
@@ -61,10 +72,19 @@ export class Scene3d {
         return this._camera;
     }
 
-    startAnimation(animator: () => void) {
+    startAnimation(animator: (time: TimeInfo) => void) {
         this.cancelAnimation();
+        this.timer = new THREE.Timer();
         const callback = () => {
-            animator();
+            this.timer.update();
+            const delta = this.timer.getDelta();
+            const elapsed = this.timer.getElapsed();
+
+            animator({
+                delta: delta * this.timeMultiplier,
+                elapsed: elapsed * this.timeMultiplier
+            });
+
             this._orbitControls.update()
             this._renderer.render(this._scene, this._camera)
             this._animationFrameId = requestAnimationFrame(callback)
