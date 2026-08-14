@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import HelloWorld from './components/HelloWorld.vue'
+import SingleQubitScene from './components/SingleQubitScene.vue'
 </script>
 
 <template>
-  <HelloWorld />
+  <SingleQubitScene />
 </template>
