@@ -18,6 +18,7 @@ export class Scene3d {
     private _orbitControls: OrbitControls;
     private _animator: Animator;
     private _animationLogic: AnimationLogic;
+    private _pausedTimeLogic: AnimationLogic;
 
     constructor(params: Scene3dParams) {
         this.canvasElement = params.canvasElement;
@@ -56,10 +57,21 @@ export class Scene3d {
             }
         };
 
+        this._pausedTimeLogic = {
+            execute(_: TimeInfo) {
+                thisScene._orbitControls.update();
+                thisScene._renderer.render(thisScene._scene, thisScene._camera);
+            }
+        };
+
         this._animator = params.animator;
-        this._animator.addLogic(this._animationLogic);
+        this._animator.addLogic(this._animationLogic, this._pausedTimeLogic);
 
         window.addEventListener('resize', this.onResize);
+    }
+
+    render() {
+        this._renderer.render(this._scene, this._camera);
     }
 
     add(...object: THREE.Object3D[]) {

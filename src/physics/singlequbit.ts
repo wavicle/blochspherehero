@@ -1,5 +1,6 @@
 import { complex, matrix, multiply, divide, hypot, flatten, abs, conj, type Complex } from "mathjs";
 import { Vector3 } from "three";
+import { SingleQubitState } from "./single_qubit_state";
 
 export interface StaticInstruction {
     gamma: number;
@@ -41,23 +42,27 @@ export function getUnitaryTransform(
 }
 
 export function applyControlSingleQubit(
-    inputState: [Complex, Complex],
+    inputState: SingleQubitState,
     staticInstr: StaticInstruction,
     ctrlInstr: ControlInstruction
-): [Complex, Complex] {
-    const inpMatrix = matrix(inputState)
+): SingleQubitState {
+    const inpMatrix = matrix([
+        inputState.c0, inputState.c1
+    ]);
     const U = getUnitaryTransform(staticInstr, ctrlInstr)
     const new_state = flatten(multiply(U, inpMatrix)).valueOf();
-    return new_state as ([Complex, Complex])
+    return new SingleQubitState(new_state[0] as Complex, new_state[1] as Complex);
 }
 
-export function singleQubitStateToBloch([c1, c2]: [Complex, Complex]): Vector3 {
+export function singleQubitStateToBloch(state: SingleQubitState): Vector3 {
+    const c0 = state.c0;
+    const c1 = state.c1;
+    const absC0 = abs(c0) as number;
     const absC1 = abs(c1) as number;
-    const absC2 = abs(c2) as number;
 
-    const norm = hypot(absC1, absC2);
-    const a = divide(c1, norm) as math.Complex;
-    const b = divide(c2, norm) as math.Complex;
+    const norm = hypot(absC0, absC1);
+    const a = divide(c0, norm) as math.Complex;
+    const b = divide(c1, norm) as math.Complex;
 
     const product = multiply(conj(a), b) as math.Complex;
 
