@@ -18,7 +18,6 @@ export class Scene3d {
     private _orbitControls: OrbitControls;
     private _animator: Animator;
     private _animationLogic: AnimationLogic;
-    private _animationLogicId: string;
 
     constructor(params: Scene3dParams) {
         this.canvasElement = params.canvasElement;
@@ -58,17 +57,13 @@ export class Scene3d {
         };
 
         this._animator = params.animator;
-        this._animationLogicId = this._animator.addLogic(this._animationLogic);
+        this._animator.addLogic(this._animationLogic);
 
         window.addEventListener('resize', this.onResize);
     }
 
     add(...object: THREE.Object3D[]) {
         this._scene.add(...object);
-    }
-
-    getAnimationLogicId() {
-        return this._animationLogic;
     }
 
     private onResize() {
