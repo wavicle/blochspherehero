@@ -67,6 +67,10 @@ export class Scene3d {
         this._scene.add(...object);
     }
 
+    getAnimationLogicId() {
+        return this._animationLogic;
+    }
+
     private onResize() {
         const width = window.innerWidth
         const height = window.innerHeight
