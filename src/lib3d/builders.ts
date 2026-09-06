@@ -1,5 +1,9 @@
 import * as THREE from 'three'
 
+export const BLOCH_SPHERE_RADIUS = 1.0;
+export const AXIS_LENGTH = 2.0;
+export const BLOCH_SPHERE_COLOR = 0xFFFFFF;
+
 export interface cube3dParams {
     width: number,
     height: number,
@@ -22,7 +26,7 @@ export const createTextSprite = (text: string, color: string): THREE.Sprite => {
 
     if (context) {
         context.fillStyle = color
-        context.font = 'bold 90px sans-serif'
+        context.font = 'bold 60px sans-serif'
         context.textAlign = 'center'
         context.textBaseline = 'middle'
         context.fillText(text, 64, 64)
@@ -40,7 +44,7 @@ export function createAxesHelper() {
 
     const axesGroup = new THREE.Group()
 
-    const axesHelper = new THREE.AxesHelper(2.5)
+    const axesHelper = new THREE.AxesHelper(AXIS_LENGTH - 0.2)
     const axesMaterial = axesHelper.material as THREE.Material
     if (axesMaterial) {
         axesMaterial.depthTest = false
@@ -49,17 +53,17 @@ export function createAxesHelper() {
     axesGroup.add(axesHelper)
 
     const xLabel = createTextSprite('X', '#ff4444')
-    xLabel.position.set(2.7, 0, 0)
+    xLabel.position.set(AXIS_LENGTH, 0, 0)
     axesGroup.add(xLabel)
     labelSprites.push(xLabel)
 
     const yLabel = createTextSprite('Y', '#44ff44')
-    yLabel.position.set(0, 2.7, 0)
+    yLabel.position.set(0, AXIS_LENGTH, 0)
     axesGroup.add(yLabel)
     labelSprites.push(yLabel)
 
     const zLabel = createTextSprite('Z', '#4444ff')
-    zLabel.position.set(0, 0, 2.7)
+    zLabel.position.set(0, 0, AXIS_LENGTH)
     axesGroup.add(zLabel)
     labelSprites.push(zLabel);
 
@@ -69,11 +73,11 @@ export function createAxesHelper() {
 export function createBlochSphereGrid() {
     const group = new THREE.Group();
 
-    const sphereGeometry = new THREE.SphereGeometry(1.5, 16, 16);
+    const sphereGeometry = new THREE.SphereGeometry(BLOCH_SPHERE_RADIUS, 16, 16);
     sphereGeometry.rotateX(Math.PI / 2);
     const sphereWireframeGeometry = new THREE.WireframeGeometry(sphereGeometry);
     const material = new THREE.LineBasicMaterial({
-        color: 0x00ffff,
+        color: BLOCH_SPHERE_COLOR,
         transparent: true,
         opacity: 0.1
     });
@@ -83,7 +87,7 @@ export function createBlochSphereGrid() {
     );
     group.add(edges);
 
-    const circleGeometry = new THREE.CircleGeometry(1.5);
+    const circleGeometry = new THREE.CircleGeometry(BLOCH_SPHERE_RADIUS);
     const circleMesh = new THREE.Mesh(circleGeometry, material);
 
     group.add(circleMesh);
@@ -96,10 +100,11 @@ export interface ArrowParams {
     direction: THREE.Vector3,
     length: number,
     color: number;
+    opacity: number;
 }
 
-export function createArrow({ origin, direction, length, color }: ArrowParams) {
-    return new THREE.ArrowHelper(
+export function createArrow({ origin, direction, length, color, opacity = 1.0 }: ArrowParams) {
+    const arrow = new THREE.ArrowHelper(
         direction.normalize(),
         origin,
         length,
@@ -107,4 +112,18 @@ export function createArrow({ origin, direction, length, color }: ArrowParams) {
         0.2,
         0.2
     );
+
+    const lineMaterial = arrow.line.material;
+    if (!Array.isArray(lineMaterial)) {
+        lineMaterial.transparent = true;
+        lineMaterial.opacity = opacity;
+    }
+
+    const coneMaterial = arrow.cone.material;
+    if (!Array.isArray(coneMaterial)) {
+        coneMaterial.transparent = true;
+        coneMaterial.opacity = opacity;
+    }
+
+    return arrow;
 }

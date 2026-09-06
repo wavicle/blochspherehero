@@ -1,16 +1,13 @@
 import * as THREE from 'three'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
+import type { AnimationLogic, Animator, TimeInfo } from './animator';
 
 THREE.Object3D.DEFAULT_UP.set(0, 0, 1);
 
 export interface Scene3dParams {
     canvasElement: HTMLCanvasElement;
-    timeMultiplier: number;
-}
-
-export interface TimeInfo {
-    delta: number;
-    elapsed: number;
+    animator: Animator,
+    animationLogic: AnimationLogic
 }
 
 export class Scene3d {
@@ -19,10 +16,9 @@ export class Scene3d {
     private _scene: THREE.Scene;
     private _camera: THREE.PerspectiveCamera;
     private _orbitControls: OrbitControls;
-    private _animationFrameId: number | null = null;
-
-    private timer = new THREE.Timer();
-    private timeMultiplier: number;
+    private _animator: Animator;
+    private _animationLogic: AnimationLogic;
+    private _animationLogicId: string;
 
     constructor(params: Scene3dParams) {
         this.canvasElement = params.canvasElement;
@@ -43,7 +39,7 @@ export class Scene3d {
             100
         );
         this._camera.up.set(0, 0, 1);
-        this._camera.position.set(4, 4, 4);
+        this._camera.position.set(4, 4, 2);
 
         this._orbitControls = new OrbitControls(this._camera, this._renderer.domElement);
         this._orbitControls.enableDamping = true;
@@ -51,7 +47,18 @@ export class Scene3d {
         this._orbitControls.target.set(0, 0, 0);
         this._orbitControls.update();
 
-        this.timeMultiplier = params.timeMultiplier;
+        const innerAnimationLogic = params.animationLogic;
+        const thisScene = this;
+        this._animationLogic = {
+            execute(timeInfo: TimeInfo) {
+                innerAnimationLogic.execute(timeInfo);
+                thisScene._orbitControls.update();
+                thisScene._renderer.render(thisScene._scene, thisScene._camera);
+            }
+        };
+
+        this._animator = params.animator;
+        this._animationLogicId = this._animator.addLogic(this._animationLogic);
 
         window.addEventListener('resize', this.onResize);
     }
@@ -72,34 +79,7 @@ export class Scene3d {
         return this._camera;
     }
 
-    startAnimation(animator: (time: TimeInfo) => void) {
-        this.cancelAnimation();
-        this.timer = new THREE.Timer();
-        const callback = () => {
-            this.timer.update();
-            const delta = this.timer.getDelta();
-            const elapsed = this.timer.getElapsed();
-
-            animator({
-                delta: delta * this.timeMultiplier,
-                elapsed: elapsed * this.timeMultiplier
-            });
-
-            this._orbitControls.update()
-            this._renderer.render(this._scene, this._camera)
-            this._animationFrameId = requestAnimationFrame(callback)
-        };
-        this._animationFrameId = requestAnimationFrame(callback);
-    }
-
-    cancelAnimation() {
-        if (this._animationFrameId) {
-            cancelAnimationFrame(this._animationFrameId);
-        }
-    }
-
     dispose() {
-        this.cancelAnimation();
         window.removeEventListener('resize', this.onResize);
     }
 
