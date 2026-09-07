@@ -13,52 +13,58 @@ export interface AnimationLogic {
     execute: (time: TimeInfo) => void
 }
 
+export interface AnimationLogicSuite {
+    onReset: AnimationLogic,
+    whenRunning: AnimationLogic,
+    whenPaused: AnimationLogic
+    alwaysAfter: AnimationLogic
+}
+
 export class Animator {
-    private timer = new THREE.Timer();
-    private timeMultiplier: number;
+    private _timer = new THREE.Timer();
+    private _timeMultiplier: number;
     private _animationFrameId: number | null = null;
-    private _logicsById = new Map<string, AnimationLogic>();
-    private _pausedTimelogicsById = new Map<string, AnimationLogic>();
+
+    private _animationLogicSuitesById = new Map<string, AnimationLogicSuite>();
 
     private _paused: boolean = false;
-    private _elapsedTimeS = 0;
+    private _machineElapsedTimeS = 0;
 
     constructor(params: AnimatorParams) {
-        this.timeMultiplier = params.timeMultiplier;
+        this._timeMultiplier = params.timeMultiplier;
     }
 
-    addLogic(mainLogic: AnimationLogic, pausedTimeLogic: AnimationLogic) {
-        const logicId = crypto.randomUUID();
-        this._logicsById.set(logicId, mainLogic);
-        this._pausedTimelogicsById.set(logicId, pausedTimeLogic);
-        return logicId;
+    addLogic(suite: AnimationLogicSuite) {
+        const suiteId = crypto.randomUUID();
+        this._animationLogicSuitesById.set(suiteId, suite);
+        return suiteId;
     }
 
-    removeLogic(logicId: string) {
-        this._logicsById.delete(logicId);
-        this._pausedTimelogicsById.delete(logicId);
+    removeLogic(suiteId: string) {
+        this._animationLogicSuitesById.delete(suiteId);
     }
 
     restart() {
         this.cancel();
         this.resume();
-        this.timer = new THREE.Timer();
+        this._timer = new THREE.Timer();
         const callback = () => {
-            this.timer.update();
-            const deltaScaled = this.timer.getDelta();
-            if(this._paused) {
-                for (const logic of this._pausedTimelogicsById.values()) {
-                    logic.execute({ delta: -1, elapsed: -1 });
+            this._timer.update();
+            const deltaScaled = this._timer.getDelta();
+            if (this._paused) {
+                for (const suite of this._animationLogicSuitesById.values()) {
+                    suite.whenPaused.execute({ delta: -1, elapsed: -1 });
                 }
             } else {
-                this._elapsedTimeS += deltaScaled;
-
-                const delta = deltaScaled * this.timeMultiplier;
-                const elapsed = this._elapsedTimeS * this.timeMultiplier;
-
-                for (const logic of this._logicsById.values()) {
-                    logic.execute({ delta, elapsed });
+                this._machineElapsedTimeS += deltaScaled;
+                const delta = deltaScaled * this._timeMultiplier;
+                const elapsed = this._machineElapsedTimeS * this._timeMultiplier;
+                for (const suite of this._animationLogicSuitesById.values()) {
+                    suite.whenRunning.execute({ delta, elapsed });
                 }
+            }
+            for (const suite of this._animationLogicSuitesById.values()) {
+                suite.alwaysAfter.execute({ delta: -1, elapsed: -1 });
             }
             this._animationFrameId = requestAnimationFrame(callback)
         };
@@ -67,7 +73,8 @@ export class Animator {
 
     pause() {
         this._paused = true;
-        this.timer.reset();
+        /* timer's reset actually means pause :( */
+        this._timer.reset();
     }
 
     resume() {
@@ -75,12 +82,18 @@ export class Animator {
     }
 
     cancel() {
+        this.pause();
+        this._machineElapsedTimeS = 0;
+        for (const suite of this._animationLogicSuitesById.values()) {
+            suite.onReset.execute({ delta: -1, elapsed: -1 });
+            suite.alwaysAfter.execute({ delta: -1, elapsed: -1 });
+        }
         if (this._animationFrameId) {
             cancelAnimationFrame(this._animationFrameId);
         }
     }
 
-    isPaused() {
+    get isPaused() {
         return this._paused;
     }
 

@@ -1,14 +1,13 @@
 import * as THREE from 'three'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
-import type { AnimationLogic, Animator, TimeInfo } from './animator';
+import type { AnimationLogicSuite, Animator, TimeInfo } from './animator';
 
 THREE.Object3D.DEFAULT_UP.set(0, 0, 1);
 
 export interface Scene3dParams {
     canvasElement: HTMLCanvasElement;
     animator: Animator,
-    animationLogic: AnimationLogic,
-    defaultLogic: AnimationLogic
+    animationLogicSuite: AnimationLogicSuite
 }
 
 export class Scene3d {
@@ -18,8 +17,7 @@ export class Scene3d {
     private _camera: THREE.PerspectiveCamera;
     private _orbitControls: OrbitControls;
     private _animator: Animator;
-    private _animationLogic: AnimationLogic;
-    private _pausedTimeLogic: AnimationLogic;
+    private _animationLogicSuiteId: string;
 
     constructor(params: Scene3dParams) {
         this.canvasElement = params.canvasElement;
@@ -48,27 +46,22 @@ export class Scene3d {
         this._orbitControls.target.set(0, 0, 0);
         this._orbitControls.update();
 
-        const innerAnimationLogic = params.animationLogic;
-        const thisScene = this;
-        this._animationLogic = {
-            execute(timeInfo: TimeInfo) {
-                innerAnimationLogic.execute(timeInfo);
-                params.defaultLogic.execute(timeInfo);
-                thisScene._orbitControls.update();
-                thisScene._renderer.render(thisScene._scene, thisScene._camera);
-            }
-        };
-
-        this._pausedTimeLogic = {
-            execute(timeInfo: TimeInfo) {
-                params.defaultLogic.execute(timeInfo);
-                thisScene._orbitControls.update();
-                thisScene._renderer.render(thisScene._scene, thisScene._camera);
-            }
-        };
-
         this._animator = params.animator;
-        this._animator.addLogic(this._animationLogic, this._pausedTimeLogic);
+
+        const thisScene = this;
+        const decoratedAnimationLogicSuite: AnimationLogicSuite = {
+            onReset: params.animationLogicSuite.onReset,
+            whenRunning: params.animationLogicSuite.whenRunning,
+            whenPaused: params.animationLogicSuite.whenPaused,
+            alwaysAfter: {
+                execute(timeInfo: TimeInfo) {
+                    params.animationLogicSuite.alwaysAfter.execute(timeInfo);
+                    thisScene._orbitControls.update();
+                    thisScene._renderer.render(thisScene._scene, thisScene._camera);
+                }
+            }
+        }
+        this._animationLogicSuiteId = this._animator.addLogic(decoratedAnimationLogicSuite);
 
         window.addEventListener('resize', this.onResize);
     }
@@ -94,6 +87,7 @@ export class Scene3d {
     }
 
     dispose() {
+        this._animator.removeLogic(this._animationLogicSuiteId);
         window.removeEventListener('resize', this.onResize);
     }
 

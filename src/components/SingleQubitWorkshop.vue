@@ -70,7 +70,7 @@ const dumbbellsByAxis = ref<{ [key: string]: Dumbbell[] }>({
     { startTimeS: 2.0 * TIME_MULTIPLIER, endTimeS: (2 + 2.348) * TIME_MULTIPLIER },
   ],
   'y': [
-    
+
   ],
   'z': [
     { startTimeS: 8 * TIME_MULTIPLIER, endTimeS: (8 + 2.348) * TIME_MULTIPLIER },
@@ -90,7 +90,27 @@ onMounted(() => {
     }
   };
 
-  scene = new Scene3d({ canvasElement: canvas.value!, animator: SOLE_ANIMATOR, animationLogic, defaultLogic });
+  scene = new Scene3d({
+    canvasElement: canvas.value!,
+    animator: SOLE_ANIMATOR,
+    animationLogicSuite: {
+      onReset: {
+        execute(_) {
+          handleReset();
+        },
+      },
+      whenRunning: animationLogic,
+      whenPaused: {
+        execute(_) {
+        },
+      },
+      alwaysAfter: {
+        execute(_) {
+          targetArrow.visible = showTargetArrowRef.value;
+        },
+      }
+    }
+  });
 
   scene.add(createBlochSphereGrid());
   scene.add(createAxesHelper());
@@ -149,6 +169,7 @@ function handleReset() {
     actualStateRef.value = initialState;
     actualArrow.setDirection(singleQubitStateToBloch(actualStateRef.value));
     fidelity.value = calcFidelity(actualStateRef.value, targetState);
+    SOLE_ANIMATOR.cancel();
     scene?.render();
 
     resetDelayMs.value = 1000 * RESTART_DELAY_S;
