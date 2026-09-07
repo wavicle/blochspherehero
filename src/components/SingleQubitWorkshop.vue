@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { RESTART_DELAY_S, SOLE_ANIMATOR } from '../physics/config.ts';
-import { computed, onBeforeUnmount, onMounted, ref, shallowRef, type Ref } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref, shallowRef } from 'vue'
 import { Scene3d } from '../lib3d/Scene3d.ts';
 import { type TimeInfo } from '../lib3d/animator.ts';
 import { BLOCH_SPHERE_RADIUS, createArrow, createAxesHelper, createBlochSphereGrid } from '../lib3d/builders.ts';
