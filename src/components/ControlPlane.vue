@@ -129,7 +129,7 @@ function calcY2(dumbbell: Dumbbell, elapsedS: number) {
   font-size: 20pt;
   position: absolute;
   color: white;
-  top: 60px;
+  bottom: 60px;
   right: 300px;
 }
 </style>
