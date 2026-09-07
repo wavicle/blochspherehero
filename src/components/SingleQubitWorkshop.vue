@@ -13,6 +13,7 @@ import { single_qubit_games } from '../games/single_qubit/single_qubit_game_suit
 import type { SingleQubitState } from '../physics/single_qubit_state.ts';
 import type { SingleQubitGame } from '../physics/single_qubit_game.ts';
 
+const controlPlaneRef = ref<typeof ControlPlane | null>(null);
 const loadedGameRef = ref(defaultGame);
 
 const gameTitle = ref(defaultGame.title);
@@ -154,6 +155,8 @@ function animateBlochSphere(timeInfo: TimeInfo) {
 }
 
 function handleReset() {
+  controlPlaneRef?.value?.resetFidelity();
+
   if (!animationDelayed.value) {
     animationDelayed.value = true;
     isAnimationPaused.value = false;
@@ -232,7 +235,7 @@ onBeforeUnmount(() => {
   </div>
 
   <div class="fidelity">
-    Fidelity: {{ fidelity }} %
+    Target Fidelity: {{ fidelity }} %
   </div>
 
   <div class="showTargetArrow">
@@ -242,7 +245,7 @@ onBeforeUnmount(() => {
     </label>
   </div>
 
-  <ControlPlane :is-x-pressed="isXPressed" :is-y-pressed="isYPressed" :is-z-pressed="isZPressed"
+  <ControlPlane ref="controlPlaneRef" :is-x-pressed="isXPressed" :is-y-pressed="isYPressed" :is-z-pressed="isZPressed"
     :elapsed-time="elapsedTime" :dumbbells-by-axis="dumbbellsByAxis" />
   <canvas ref="canvas" class="three-scene" />
 

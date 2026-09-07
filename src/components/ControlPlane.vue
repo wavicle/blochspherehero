@@ -1,9 +1,29 @@
 <script setup lang="ts">
 const laneLength = ref(LANE_LENGTH_PX);
 
-import { onBeforeUnmount, onMounted, ref, type PropType } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref, type PropType } from 'vue'
 import { LANE_LENGTH as LANE_LENGTH_PX, LANE_SPEED_PX_PER_COMPUTER_S, TIME_MULTIPLIER } from '../physics/config';
 import type { Dumbbell } from '../physics/singlequbit';
+import { keyPresses } from '../physics/keydetector';
+
+const fidelityScores = {
+  expected: 1,
+  actual: 1
+}
+
+function resetFidelity() {
+  fidelityScores.actual = 1;
+  fidelityScores.expected = 1;
+}
+
+const controlFidelity = computed(() => {
+  updateFidelityScores();
+  return (100*fidelityScores.actual / fidelityScores.expected).toFixed(2);
+});
+
+defineExpose({
+  resetFidelity
+});
 
 const props = defineProps({
   isXPressed: {
@@ -48,6 +68,33 @@ function computeDumbbellGraphics(dumbbells: Dumbbell[], elapsedS: number) {
     })
   }
   return dumbbellGraphics;
+}
+
+function updateFidelityScores() {
+  for (const axis of ['x', 'y', 'z']) {
+    const keyPressExpected = isKeyPressExpected(axis, props.elapsedTime);
+    const keyPressHappened = (keyPresses[`Key${axis.toUpperCase()}`] == true);
+    if (keyPressExpected) {
+      fidelityScores.expected += 1;
+    }
+    if (keyPressExpected != keyPressHappened) {
+      fidelityScores.actual += -1;
+    } else if (keyPressExpected && keyPressHappened) {
+      fidelityScores.actual += 1;
+    }
+  }
+}
+
+function isKeyPressExpected(axis: string, elapsedTime: number) {
+  let keyPressExpected = false;
+
+  for (const dumbbell of props.dumbbellsByAxis[axis]) {
+    if (dumbbell.startTimeS <= elapsedTime && dumbbell.endTimeS >= elapsedTime) {
+      keyPressExpected = true;
+      break;
+    }
+  }
+  return keyPressExpected;
 }
 
 function calcY1(dumbbell: Dumbbell, elapsedS: number) {
@@ -99,8 +146,11 @@ function calcY2(dumbbell: Dumbbell, elapsedS: number) {
 
     </svg>
   </div>
+  <div class="controlFidelity">
+    Control Fidelity: {{ controlFidelity }} %
+  </div>
   <div class="elapsedTime">
-    Physical Time(s): {{ elapsedTime.toFixed(6) }} <br>
+    Elapsed Time(s): {{ elapsedTime.toFixed(6) }} <br>
   </div>
 </template>
 
@@ -124,12 +174,21 @@ function calcY2(dumbbell: Dumbbell, elapsedS: number) {
   left: 10px;
 }
 
+.controlFidelity {
+  z-index: 2;
+  font-size: 20pt;
+  position: absolute;
+  color: greenyellow;
+  bottom: 100px;
+  right: 280px;
+}
+
 .elapsedTime {
   z-index: 2;
   font-size: 20pt;
   position: absolute;
   color: white;
   bottom: 60px;
-  right: 300px;
+  right: 280px;
 }
 </style>
