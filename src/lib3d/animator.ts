@@ -21,6 +21,7 @@ export class Animator {
     private _pausedTimelogicsById = new Map<string, AnimationLogic>();
 
     private _paused: boolean = false;
+    private _elapsedTimeS = 0;
 
     constructor(params: AnimatorParams) {
         this.timeMultiplier = params.timeMultiplier;
@@ -43,17 +44,17 @@ export class Animator {
         this.resume();
         this.timer = new THREE.Timer();
         const callback = () => {
+            this.timer.update();
+            const deltaScaled = this.timer.getDelta();
             if(this._paused) {
                 for (const logic of this._pausedTimelogicsById.values()) {
                     logic.execute({ delta: -1, elapsed: -1 });
                 }
             } else {
-                this.timer.update();
-                const deltaScaled = this.timer.getDelta();
-                const elapsedScaled = this.timer.getElapsed();
+                this._elapsedTimeS += deltaScaled;
 
                 const delta = deltaScaled * this.timeMultiplier;
-                const elapsed = elapsedScaled * this.timeMultiplier;
+                const elapsed = this._elapsedTimeS * this.timeMultiplier;
 
                 for (const logic of this._logicsById.values()) {
                     logic.execute({ delta, elapsed });
@@ -66,6 +67,7 @@ export class Animator {
 
     pause() {
         this._paused = true;
+        this.timer.reset();
     }
 
     resume() {

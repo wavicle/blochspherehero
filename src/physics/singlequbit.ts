@@ -16,8 +16,25 @@ export interface ControlInstruction {
     Bz: number
 }
 
+export interface Dumbbell {
+    startTimeS: number,
+    endTimeS: number
+}
+
+export function timeForwardLanes(dumbbells: Dumbbell[], elapsedS: number) {
+    const newDumbbells: Dumbbell[] = [];
+    for (const dumbbell of dumbbells) {
+        const newDumbbell = {
+            startTimeS: dumbbell.startTimeS - elapsedS,
+            endTimeS: dumbbell.endTimeS - elapsedS
+        }
+        newDumbbells.push(newDumbbell);
+    }
+    return newDumbbells;
+}
+
 export function calcFidelity(actual: SingleQubitState, target: SingleQubitState) {
-    return (100*abs(dot([actual.c0, actual.c1], [target.c0, target.c1]))).toFixed(2);
+    return (100 * abs(dot([actual.c0, actual.c1], [target.c0, target.c1]))).toFixed(2);
 }
 
 export function getUnitaryTransform(
