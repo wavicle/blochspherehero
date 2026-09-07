@@ -78,12 +78,6 @@ const dumbbellsByAxis = ref<{ [key: string]: Dumbbell[] }>({
 });
 
 onMounted(() => {
-  const defaultLogic = {
-    execute(_: TimeInfo) {
-      targetArrow.visible = showTargetArrowRef.value;
-    }
-  };
-
   const animationLogic = {
     execute(timeInfo: TimeInfo) {
       animateBlochSphere(timeInfo);
