@@ -20,7 +20,7 @@ export class Animator {
     private _logicsById = new Map<string, AnimationLogic>();
     private _pausedTimelogicsById = new Map<string, AnimationLogic>();
 
-    private _paused: boolean = true;
+    private _paused: boolean = false;
 
     constructor(params: AnimatorParams) {
         this.timeMultiplier = params.timeMultiplier;

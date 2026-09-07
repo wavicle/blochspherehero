@@ -1,44 +1,78 @@
 <script setup lang="ts">
-import { SOLE_ANIMATOR } from '../physics/config.ts';
+import { RESTART_DELAY_S, SOLE_ANIMATOR } from '../physics/config.ts';
 import { computed, onBeforeUnmount, onMounted, ref, shallowRef, type Ref } from 'vue'
 import { Scene3d } from '../lib3d/Scene3d.ts';
 import { type TimeInfo } from '../lib3d/animator.ts';
 import { BLOCH_SPHERE_RADIUS, createArrow, createAxesHelper, createBlochSphereGrid } from '../lib3d/builders.ts';
 import { Vector3 } from 'three';
-import { applyControlSingleQubit, singleQubitStateToBloch, type ControlInstruction, type StaticInstruction } from '../physics/singlequbit.ts';
+import { applyControlSingleQubit, calcFidelity, singleQubitStateToBloch, type ControlInstruction, type StaticInstruction } from '../physics/singlequbit.ts';
 import { complex } from 'mathjs';
 import { keyPresses } from '../physics/keydetector.ts';
 import ControlPlane from './ControlPlane.vue';
 import { SingleQubitState } from '../physics/single_qubit_state.ts';
 
+const animationDelayed = ref(false);
 const isXPressed = ref(false);
 const isYPressed = ref(false);
 const isZPressed = ref(false);
 
+const resetDelayMs = ref(1000*RESTART_DELAY_S);
 const elapsedTime = ref(0);
+const fidelity = ref("0.00");
 
-const isAnimationPaused = ref(true);
+const isAnimationPaused = ref(false);
 
 const canvas = ref<HTMLCanvasElement | null>(null)
 let scene: Scene3d | null = null;
 
+
 const staticInstr: StaticInstruction = { gamma: 2.675 * (10 ** 8), B0: 2.0 };
 
-const qubitStateRef = shallowRef(new SingleQubitState(complex(1, 0), complex(0, 0)));
+const initialState = new SingleQubitState(complex(1, 0), complex(0, 0));
+const actualStateRef = shallowRef(initialState);
+const actualArrow = createArrow({
+  origin: new Vector3(0, 0, 0),
+  direction: singleQubitStateToBloch(actualStateRef.value),
+  length: BLOCH_SPHERE_RADIUS,
+  color: 0xFFA500,
+  opacity: 1.0
+});
 
-const qubitC1Display = computed(() => {
-  const value = qubitStateRef.value;
+const showTargetArrowRef = ref(false);
+
+const actualC1Display = computed(() => {
+  const value = actualStateRef.value;
   const c0 = value.c0;
   return `(${c0.re.toFixed(2)} + ${c0.im.toFixed(2)}i) |0>`;
 });
 
-const qubitC2Display = computed(() => {
-  const value = qubitStateRef.value;
+const actualC2Display = computed(() => {
+  const value = actualStateRef.value;
+  const c1 = value.c1;
+  return `(${c1.re.toFixed(2)} + ${c1.im.toFixed(2)}i) |1>`;
+});
+
+const targetState = new SingleQubitState(complex(0.5, 0.5), complex(0.5, 0.5));
+
+const targetC1Display = computed(() => {
+  const value = targetState;
+  const c0 = value.c0;
+  return `(${c0.re.toFixed(2)} + ${c0.im.toFixed(2)}i) |0>`;
+});
+
+const targetC2Display = computed(() => {
+  const value = targetState;
   const c1 = value.c1;
   return `(${c1.re.toFixed(2)} + ${c1.im.toFixed(2)}i) |1>`;
 });
 
 onMounted(() => {
+  const defaultLogic = {
+    execute(_: TimeInfo) {
+      targetArrow.visible = showTargetArrowRef.value;
+    }
+  };
+
   const animationLogic = {
     execute(timeInfo: TimeInfo) {
       elapsedTime.value = timeInfo.elapsed;
@@ -57,7 +91,6 @@ onMounted(() => {
       const Bz = zPressed ? 2.5 * (10 ** (-5)) : 0;
 
       if (anyKeyPressed) {
-
         const ctrlInstr: ControlInstruction = {
           t: timeInfo.delta,
           wRF: staticInstr.gamma * staticInstr.B0,
@@ -65,33 +98,53 @@ onMounted(() => {
           By: By,
           Bz: Bz,
         };
-        const newQubitState = applyControlSingleQubit(qubitStateRef.value, staticInstr, ctrlInstr);
-        arrow.setDirection(singleQubitStateToBloch(newQubitState));
-        qubitStateRef.value = newQubitState;
+        const newQubitState = applyControlSingleQubit(actualStateRef.value, staticInstr, ctrlInstr);
+        actualArrow.setDirection(singleQubitStateToBloch(newQubitState));
+        actualStateRef.value = newQubitState;
+        fidelity.value = calcFidelity(actualStateRef.value, targetState);
       }
     }
   };
 
-  scene = new Scene3d({ canvasElement: canvas.value!, animator: SOLE_ANIMATOR, animationLogic });
+  scene = new Scene3d({ canvasElement: canvas.value!, animator: SOLE_ANIMATOR, animationLogic, defaultLogic });
 
   scene.add(createBlochSphereGrid());
   scene.add(createAxesHelper());
+  scene.add(actualArrow);
 
-  const arrow = createArrow({
+  const targetArrow = createArrow({
     origin: new Vector3(0, 0, 0),
-    direction: singleQubitStateToBloch(qubitStateRef.value),
+    direction: singleQubitStateToBloch(targetState),
     length: BLOCH_SPHERE_RADIUS,
-    color: 0xFFA500,
+    color: 0xFFFFFF,
     opacity: 1.0
   });
-  scene.add(arrow);
+  targetArrow.visible = showTargetArrowRef.value;
+  scene.add(targetArrow);
 
   scene.render();
+
+  handleReset();
 });
 
 function handleReset() {
-  SOLE_ANIMATOR.restart();
-  isAnimationPaused.value = false;
+  if (!animationDelayed.value) {
+    animationDelayed.value = true;
+    isAnimationPaused.value = false;
+    actualStateRef.value = initialState;
+    actualArrow.setDirection(singleQubitStateToBloch(actualStateRef.value));
+    fidelity.value = calcFidelity(actualStateRef.value, targetState);
+    scene?.render();
+    resetDelayMs.value = 1000*RESTART_DELAY_S;
+    const intervalId = setInterval(()=>{
+      resetDelayMs.value = resetDelayMs.value - 500; 
+    }, 500);
+    setTimeout(() => {
+      clearInterval(intervalId);
+      SOLE_ANIMATOR.restart();
+      animationDelayed.value = false;
+    }, RESTART_DELAY_S * 1000);
+  }
 }
 
 function handlePause() {
@@ -104,36 +157,59 @@ function handleResume() {
   isAnimationPaused.value = false;
 }
 
+window.addEventListener('keydown', (event) => {
+  if (event.code == 'KeyS') {
+    handleReset();
+  } else if (event.code == 'KeyP') {
+    handlePause();
+  } else if (event.code == 'KeyR') {
+    handleResume();
+  }
+});
+
 onBeforeUnmount(() => {
   scene?.dispose();
 });
 </script>
 
 <template>
-  <div class="currentState">
+  <div class="stateDisplay currentState">
     <code>Current State: <br/>
-    {{ qubitC1Display }} <br/>
-    {{ qubitC2Display }}
+    {{ actualC1Display }} <br/>
+    {{ actualC2Display }}
     </code>
   </div>
+  <div class="stateDisplay targetState">
+    <code>Target State: <br/>
+    {{ targetC1Display }} <br/>
+    {{ targetC2Display }}
+    </code>
+  </div>
+
+  <div class="fidelity">
+    Fidelity: {{ fidelity }} %
+  </div>
+
+  <div class="showTargetArrow">
+    <label>
+      <input type="checkbox" v-model="showTargetArrowRef">
+      Show Target Vector
+    </label>
+  </div>
+
   <ControlPlane :is-x-pressed="isXPressed" :is-y-pressed="isYPressed" :is-z-pressed="isZPressed"
     :elapsed-time="elapsedTime.toFixed(6)" />
   <canvas ref="canvas" class="three-scene" />
 
   <div class="animationMsg">
-    {{ isAnimationPaused ? 'Press start/resume to continue' : '' }}
+    <div v-if="animationDelayed">
+      Starting game in {{ resetDelayMs/1000 }} seconds.
+    </div>
+    {{ isAnimationPaused ? 'Game Paused' : '' }}
   </div>
 
-  <div class="btnStart" @click="handleReset">
-    (Re)Start
-  </div>
-
-  <div class="btnPause" @click="handlePause">
-    Pause
-  </div>
-
-  <div class="btnResume" @click="handleResume">
-    Resume
+  <div class="shortcuts">
+    S = (Re)Start, P = Pause, R = Resume
   </div>
 </template>
 
@@ -144,40 +220,16 @@ onBeforeUnmount(() => {
   font-size: 24pt;
   color: red;
   bottom: 100px;
-  left: 100px;
+  left: 40px;
 }
 
-.btnStart {
+.shortcuts {
   position: absolute;
   z-index: 2;
-  font-size: 24pt;
+  font-size: 16pt;
   color: greenyellow;
   bottom: 50px;
-  left: 100px;
-  text-decoration: underline;
-  cursor: pointer;
-}
-
-.btnPause {
-  position: absolute;
-  z-index: 2;
-  font-size: 24pt;
-  color: greenyellow;
-  bottom: 50px;
-  left: 240px;
-  text-decoration: underline;
-  cursor: pointer;
-}
-
-.btnResume {
-  position: absolute;
-  z-index: 2;
-  font-size: 24pt;
-  color: greenyellow;
-  bottom: 50px;
-  left: 340px;
-  text-decoration: underline;
-  cursor: pointer;
+  left: 40px;
 }
 
 .floating-h3 {
@@ -189,20 +241,45 @@ onBeforeUnmount(() => {
   z-index: 2;
 }
 
-.currentState {
+.stateDisplay {
   border-color: greenyellow;
   border: 1px solid;
   padding: 5px;
   border-radius: 5px;
   color: greenyellow;
   position: absolute;
-  left: 100px;
-  top: 60px;
   font-size: 12pt;
   z-index: 2;
 }
 
-.three-scene {
+.currentState {
+  left: 220px;
+  top: 60px;
+}
+
+.targetState {
+  left: 40px;
+  top: 60px;
+}
+
+.fidelity {
+  color: greenyellow;
+  position: absolute;
+  font-size: 20pt;
+  z-index: 2;
+  left: 40px;
+  top: 150px;
+}
+
+.showTargetArrow {
+  position: absolute;
+  z-index: 2;
+  left: 40px;
+  top: 200px;
+  color: white;
+}
+
+.show .three-scene {
   position: fixed;
   top: 0;
   left: 0;

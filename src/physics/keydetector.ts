@@ -1,7 +1,7 @@
 export const keyPresses: Record<string, boolean> = {};
 
 window.addEventListener('keydown', (event) => {
-    keyPresses[event.code] = true; // e.g., 'KeyW', 'ArrowUp', 'Space'
+    keyPresses[event.code] = true;
 });
 
 window.addEventListener('keyup', (event) => {

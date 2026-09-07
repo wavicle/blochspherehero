@@ -1,6 +1,7 @@
 import { complex, matrix, multiply, divide, hypot, flatten, abs, conj, type Complex } from "mathjs";
 import { Vector3 } from "three";
 import { SingleQubitState } from "./single_qubit_state";
+import { dot } from "mathjs";
 
 export interface StaticInstruction {
     gamma: number;
@@ -13,6 +14,10 @@ export interface ControlInstruction {
     Bx: number
     By: number
     Bz: number
+}
+
+export function calcFidelity(actual: SingleQubitState, target: SingleQubitState) {
+    return (100*abs(dot([actual.c0, actual.c1], [target.c0, target.c1]))).toFixed(2);
 }
 
 export function getUnitaryTransform(

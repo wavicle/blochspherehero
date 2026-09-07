@@ -18,7 +18,7 @@
     </svg>
   </div>
   <div class="elapsedTime">
-    Time(s): {{ elapsedTime }}
+    Physical Time(s): {{ elapsedTime }} <br>
   </div>
 </template>
 
@@ -45,9 +45,11 @@
 .elapsedTime {
   top: 670px;
   z-index: 2;
+  font-size: 20pt;
   position: absolute;
   color: white;
-  right: 100px;
+  top: 60px;
+  right: 300px;
 }
 </style>
 

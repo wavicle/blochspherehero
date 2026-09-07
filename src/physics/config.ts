@@ -4,3 +4,5 @@ export const TIME_MULTIPLIER = 1e-4;
 export const SOLE_ANIMATOR = new Animator({
     timeMultiplier: TIME_MULTIPLIER
 });
+
+export const RESTART_DELAY_S = 5;

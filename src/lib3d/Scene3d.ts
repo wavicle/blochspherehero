@@ -7,7 +7,8 @@ THREE.Object3D.DEFAULT_UP.set(0, 0, 1);
 export interface Scene3dParams {
     canvasElement: HTMLCanvasElement;
     animator: Animator,
-    animationLogic: AnimationLogic
+    animationLogic: AnimationLogic,
+    defaultLogic: AnimationLogic
 }
 
 export class Scene3d {
@@ -52,13 +53,15 @@ export class Scene3d {
         this._animationLogic = {
             execute(timeInfo: TimeInfo) {
                 innerAnimationLogic.execute(timeInfo);
+                params.defaultLogic.execute(timeInfo);
                 thisScene._orbitControls.update();
                 thisScene._renderer.render(thisScene._scene, thisScene._camera);
             }
         };
 
         this._pausedTimeLogic = {
-            execute(_: TimeInfo) {
+            execute(timeInfo: TimeInfo) {
+                params.defaultLogic.execute(timeInfo);
                 thisScene._orbitControls.update();
                 thisScene._renderer.render(thisScene._scene, thisScene._camera);
             }
