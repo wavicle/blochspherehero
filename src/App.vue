@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import SingleQubitWorkshop from './components/SingleQubitWorkshop.vue'
+import { RouterLink, RouterView } from 'vue-router'
 </script>
 
 <template>
-  <SingleQubitWorkshop />
+  <RouterView />
 </template>

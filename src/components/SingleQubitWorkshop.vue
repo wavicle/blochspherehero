@@ -126,9 +126,9 @@ onMounted(() => {
 function animateBlochSphere(timeInfo: TimeInfo) {
   elapsedTime.value = timeInfo.elapsed;
 
-  const xPressed = keyPresses['KeyX'];
-  const yPressed = keyPresses['KeyY'];
-  const zPressed = keyPresses['KeyZ'];
+  const xPressed = keyPresses['KeyX'] == true;
+  const yPressed = keyPresses['KeyY'] == true;
+  const zPressed = keyPresses['KeyZ'] == true;
   const anyKeyPressed = xPressed || yPressed || zPressed;
 
   isXPressed.value = xPressed;
@@ -353,7 +353,7 @@ onBeforeUnmount(() => {
   color: white;
 }
 
-.show .three-scene {
+.three-scene {
   position: fixed;
   top: 0;
   left: 0;

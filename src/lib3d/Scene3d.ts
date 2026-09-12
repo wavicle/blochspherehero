@@ -24,12 +24,13 @@ export class Scene3d {
         this._renderer = new THREE.WebGLRenderer({
             canvas: this.canvasElement,
             antialias: true,
+            alpha: false
         });
         this._renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
         this._renderer.setSize(window.innerWidth, window.innerHeight)
 
         this._scene = new THREE.Scene();
-        this._scene.background = new THREE.Color(0x111111);
+        this._scene.background = new THREE.Color(0x000000);
 
         this._camera = new THREE.PerspectiveCamera(
             60,
