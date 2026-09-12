@@ -88,7 +88,7 @@ function updateFidelityScores() {
 function isKeyPressExpected(axis: string, elapsedTime: number) {
   let keyPressExpected = false;
 
-  for (const dumbbell of props.dumbbellsByAxis[axis]) {
+  for (const dumbbell of props.dumbbellsByAxis[axis]!) {
     if (dumbbell.startTimeS <= elapsedTime && dumbbell.endTimeS >= elapsedTime) {
       keyPressExpected = true;
       break;
@@ -122,21 +122,21 @@ function calcY2(dumbbell: Dumbbell, elapsedS: number) {
       <circle cx="90" :cy="laneLength" r="20" stroke="#00FF00" :fill="isYPressed ? '#00FF00' : 'none'" />
       <circle cx="150" :cy="laneLength" r="20" stroke="#0000FF" :fill="isZPressed ? '#0000FF' : 'none'" />
 
-      <template v-for="(dumbbell, index) in computeDumbbellGraphics(dumbbellsByAxis['x'], props.elapsedTime)"
+      <template v-for="(dumbbell, index) in computeDumbbellGraphics(dumbbellsByAxis['x']!, props.elapsedTime)"
         :key="index">
         <line x1="30" x2="30" :y1="dumbbell.cy1" :y2="dumbbell.cy2" stroke="white" stroke-width="5"
           stroke-linecap="round" opacity="0.5" />
         <circle cx="30" :cy="dumbbell.cy1" r="20" fill="#FF0000" fill-opacity="0.5" stroke="#FFFFFF" />
         <circle cx="30" :cy="dumbbell.cy2" r="20" fill="#FF0000" fill-opacity="0.5" stroke="#FFFFFF" />
       </template>
-      <template v-for="(dumbbell, index) in computeDumbbellGraphics(dumbbellsByAxis['y'], props.elapsedTime)"
+      <template v-for="(dumbbell, index) in computeDumbbellGraphics(dumbbellsByAxis['y']!, props.elapsedTime)"
         :key="index">
         <line x1="90" x2="90" :y1="dumbbell.cy1" :y2="dumbbell.cy2" stroke="white" stroke-width="5"
           stroke-linecap="round" opacity="0.5" />
         <circle cx="90" :cy="dumbbell.cy1" r="20" fill="#00FF00" fill-opacity="0.5" stroke="#FFFFFF" />
         <circle cx="90" :cy="dumbbell.cy2" r="20" fill="#00FF00" fill-opacity="0.5" stroke="#FFFFFF" />
       </template>
-      <template v-for="(dumbbell, index) in computeDumbbellGraphics(dumbbellsByAxis['z'], props.elapsedTime)"
+      <template v-for="(dumbbell, index) in computeDumbbellGraphics(dumbbellsByAxis['z']!, props.elapsedTime)"
         :key="index">
         <line x1="150" x2="150" :y1="dumbbell.cy1" :y2="dumbbell.cy2" stroke="white" stroke-width="5"
           stroke-linecap="round" opacity="0.5" />
