@@ -1,3 +1,9 @@
+<script setup lang="ts">
+import { RouterLink } from 'vue-router';
+</script>
+
 <template>
-  Welcome to Bloch Sphere Hero!
+  <nav>
+    <RouterLink to="/single-qubit">Single Qubit</RouterLink>
+  </nav>
 </template>
