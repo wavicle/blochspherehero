@@ -50,6 +50,12 @@ export function createAxesHelper() {
         axesMaterial.depthTest = false
         axesHelper.renderOrder = 1
     }
+    axesHelper.setColors(
+        '#FF0000',
+        '#00FF00',
+        '#0000FF'
+    );
+
     axesGroup.add(axesHelper)
 
     const xLabel = createTextSprite('X', '#ff4444')

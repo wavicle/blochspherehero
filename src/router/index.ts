@@ -17,7 +17,7 @@ const router = createRouter({
     {
       path: '/single-qubit',
       name: 'single-qubit',
-      component: () => import('../views/SingleQubit.vue'),
+      component: () => import('../views/SingleQubitView.vue'),
     },
     {
       path: '/multi-qubit-1',
